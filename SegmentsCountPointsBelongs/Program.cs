@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -8,8 +9,8 @@ namespace SegmentsCountPointsBelongs
 {
     internal class Program
     {
-        private Segment[] _segments;
-        private int[] _points;
+        private Segment[] _segByBegin;
+        private Segment[] _segByEnd;
 
         public static void Main()
         {
@@ -21,11 +22,33 @@ namespace SegmentsCountPointsBelongs
 
         private void Run()
         {
-            ReadIncoming();
-            Print(CountSegmentBelongings());
+            var sr = new StreamReader(@"..\..\Test.txt");
+            var pointsAndSegmentsAmount = sr.ReadLine().Split();
+            
+            var segmentsAmount = int.Parse(pointsAndSegmentsAmount[0]);
+            var pointsAmount = int.Parse(pointsAndSegmentsAmount[1]);
+            var segments = new Segment[segmentsAmount];
+            for (var i = 0; i < segmentsAmount; i++)
+            {
+                var strSegment = sr.ReadLine().Split();
+                segments[i] = new Segment(int.Parse(strSegment[0]), int.Parse(strSegment[1]));
+            }
+
+            _segByBegin = segments.OrderBy(s => s.Begin).ToArray();
+            _segByEnd = segments.OrderBy(s => s.End).ToArray();
+            var tokens = sr.ReadLine().Split();
+            var points = new int[pointsAmount];
+            for (var i = 0; i < pointsAmount; i++)
+            {
+                points[i] = int.Parse(tokens[i]);
+            }
+
+            var result = points.Select(CountOne);
+            Print(result);
+            sr.Close();
         }
 
-        private void Print(int[] amountForAllPoints)
+        private void Print(IEnumerable<int> amountForAllPoints)
         {
             var sb = new StringBuilder();
             foreach (var pointAmount in amountForAllPoints)
@@ -37,36 +60,16 @@ namespace SegmentsCountPointsBelongs
             Console.WriteLine(sb);
         }
 
-        private int[] CountSegmentBelongings()
+        private int CountOne(int point)
         {
-            return _points.Select(p => _segments.Count(s => p >= s.Begin && p <= s.End)).ToArray();
-        }
+            var correctBeginAmount = 0;
+            for (; correctBeginAmount < _segByBegin.Length; correctBeginAmount++)
+                if (_segByBegin[correctBeginAmount].Begin > point) break;
+            var wrongEndAmount = 0;
+            for (;wrongEndAmount  < _segByEnd.Length; wrongEndAmount++)
+                if (_segByEnd[wrongEndAmount].End > point) break;
 
-        private void ReadIncoming()
-        {
-            var sr = new StreamReader(@"..\..\Test.txt");
-            //var pointsAndSegmentsAmount = Console.ReadLine().Split();
-            var pointsAndSegmentsAmount = sr.ReadLine()?.Split();
-            
-            var segmentsAmount = int.Parse(pointsAndSegmentsAmount[0]);
-            var pointsAmount = int.Parse(pointsAndSegmentsAmount[1]);
-            _segments = new Segment[segmentsAmount];
-            for (var i = 0; i < segmentsAmount; i++)
-            {
-                //var strSegment = Console.ReadLine().Split();
-                var strSegment = sr.ReadLine()?.Split();
-                _segments[i] = new Segment(int.Parse(strSegment[0]), int.Parse(strSegment[1]));
-            }
-
-            //var strPoints = Console.ReadLine().Split(); 
-            var strPoints = sr.ReadLine().Split(); 
-            _points = new int[pointsAmount];
-            for (var i = 0; i < pointsAmount; i++)
-            {
-                _points[i] = int.Parse(strPoints[i]);
-            }
-            //
-            sr.Close();
+            return correctBeginAmount - wrongEndAmount;
         }
 
         private struct Segment
