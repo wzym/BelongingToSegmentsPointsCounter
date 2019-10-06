@@ -23,32 +23,35 @@ namespace SegmentsCountPointsBelongs
         private void Run()
         {
             var sr = new StreamReader(@"..\..\Test.txt");
-            var pointsAndSegmentsAmount = sr.ReadLine().Split();
+            var pointsAndSegmentsAmount = sr.ReadLine()?.Split();
+            if (pointsAndSegmentsAmount == null || pointsAndSegmentsAmount.Length == 0) return;
             
             var segmentsAmount = int.Parse(pointsAndSegmentsAmount[0]);
             var pointsAmount = int.Parse(pointsAndSegmentsAmount[1]);
-            var segments = new Segment[segmentsAmount];
+            _segByBegin = new Segment[segmentsAmount];
             for (var i = 0; i < segmentsAmount; i++)
             {
-                var strSegment = sr.ReadLine().Split();
-                segments[i] = new Segment(int.Parse(strSegment[0]), int.Parse(strSegment[1]));
+                var strSegment = sr.ReadLine()?.Split();
+                if (strSegment == null || strSegment.Length == 0) break;
+                _segByBegin[i] = new Segment(int.Parse(strSegment[0]), int.Parse(strSegment[1]));
             }
-
-            _segByBegin = segments.OrderBy(s => s.Begin).ToArray();
-            _segByEnd = segments.OrderBy(s => s.End).ToArray();
-            var tokens = sr.ReadLine().Split();
+            Array.Sort(_segByBegin, 0, _segByBegin.Length);
+            
+            _segByEnd = _segByBegin.OrderBy(s => s.End).ToArray();
+            var tokens = sr.ReadLine()?.Split();
+            if (tokens == null || tokens.Length == 0) return;
+            
             var points = new int[pointsAmount];
             for (var i = 0; i < pointsAmount; i++)
             {
                 points[i] = int.Parse(tokens[i]);
             }
-
-            var result = points.Select(CountOne);
-            Print(result);
+            
+            Print(points.Select(CountOne));
             sr.Close();
         }
 
-        private void Print(IEnumerable<int> amountForAllPoints)
+        private static void Print(IEnumerable<int> amountForAllPoints)
         {
             var sb = new StringBuilder();
             foreach (var pointAmount in amountForAllPoints)
@@ -67,12 +70,12 @@ namespace SegmentsCountPointsBelongs
                 if (_segByBegin[correctBeginAmount].Begin > point) break;
             var wrongEndAmount = 0;
             for (;wrongEndAmount  < _segByEnd.Length; wrongEndAmount++)
-                if (_segByEnd[wrongEndAmount].End > point) break;
+                if (_segByEnd[wrongEndAmount].End >= point) break;
 
             return correctBeginAmount - wrongEndAmount;
         }
 
-        private struct Segment
+        private struct Segment : IComparable<Segment>
         {
             internal readonly int Begin;
             internal readonly int End;
@@ -82,6 +85,9 @@ namespace SegmentsCountPointsBelongs
                 Begin = begin;
                 End = end;
             }
+
+            public int CompareTo(Segment other)
+                => Begin.CompareTo(other.Begin);
         }
     }
 }
