@@ -43,10 +43,8 @@ namespace SegmentsCountPointsBelongs
             
             var points = new int[pointsAmount];
             for (var i = 0; i < pointsAmount; i++)
-            {
                 points[i] = int.Parse(tokens[i]);
-            }
-            
+
             Print(points.Select(CountOne));
             sr.Close();
         }
@@ -65,14 +63,36 @@ namespace SegmentsCountPointsBelongs
 
         private int CountOne(int point)
         {
-            var correctBeginAmount = 0;
-            for (; correctBeginAmount < _segByBegin.Length; correctBeginAmount++)
-                if (_segByBegin[correctBeginAmount].Begin > point) break;
-            var wrongEndAmount = 0;
-            for (;wrongEndAmount  < _segByEnd.Length; wrongEndAmount++)
-                if (_segByEnd[wrongEndAmount].End >= point) break;
-
+            var correctBeginAmount = GetFirstNotFitByBeginIndex(point);
+            if (correctBeginAmount < 1) return 0;
+            var wrongEndAmount = GetFirstFitByEndIndex(point);
             return correctBeginAmount - wrongEndAmount;
+        }
+
+        private int GetFirstFitByEndIndex(int point)
+        {
+            var l = -1;
+            var r = _segByEnd.Length;
+            while (r > l + 1)
+            {
+                var m = (l + r) / 2;
+                if (_segByEnd[m].End < point) l = m;
+                else r = m;
+            }
+            return r;
+        }
+
+        private int GetFirstNotFitByBeginIndex(int point)
+        {
+            var l = -1;
+            var r = _segByBegin.Length;
+            while (r > l + 1)
+            {
+                var m = (l + r) / 2;
+                if (_segByBegin[m].Begin <= point) l = m;
+                else r = m;
+            }
+            return l + 1;
         }
 
         private struct Segment : IComparable<Segment>
